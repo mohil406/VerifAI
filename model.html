@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepFake Audio Detector</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--background);
+            color: var(--text);
+            display: grid;
+            place-items: center;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 400%;
+            height: 400%;
+            background: 
+                radial-gradient(circle at 50% 50%, 
+                    rgba(99, 102, 241, 0.08) 0%, 
+                    rgba(255,255,255,0) 70%),
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(255,255,255,0.03) 0px,
+                    rgba(255,255,255,0.03) 2px,
+                    transparent 2px,
+                    transparent 4px
+                );
+            animation: move 40s linear infinite;
+            z-index: 0;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes move {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 720px;
+            width: 100%;
+            background: rgba(30, 41, 59, 0.25);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.25);
+            overflow: hidden;
+        }
+
+        .header-box {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(45deg, #818cf8, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.8rem;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            max-width: 480px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        .upload-section {
+            border: 2px dashed rgba(99, 102, 241, 0.3);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin: 1.5rem 0;
+            background: rgba(30, 41, 59, 0.4);
+        }
+
+        .upload-section.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        #filePreview {
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            align-items: center;
+        }
+
+        .preview-audio {
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 1.5rem 0;
+        }
+
+        button {
+            padding: 0.7rem 1.3rem;
+            border: none;
+            border-radius: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .primary-btn {
+            background: var(--primary);
+            color: white;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .secondary-btn {
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .secondary-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .recorder-section {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        #recordButton {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            font-size: 1.4rem;
+            background: var(--primary);
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        #recordButton.recording {
+            transform: scale(1.05);
+            box-shadow: 0 0 16px rgba(239, 68, 68, 0.3);
+            background: var(--danger);
+        }
+
+        .record-indicator {
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .record-indicator.active {
+            opacity: 1;
+        }
+
+        .record-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--danger);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        #result {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 3rem);
+            max-width: 680px;
+            padding: 1.2rem;
+            border-radius: 1rem;
+            background: var(--surface);
+            text-align: center;
+            z-index: 3;
+            animation: slideUp 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(100%); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        #loading {
+            padding: 1.2rem;
+            text-align: center;
+            display: none;
+            gap: 0.8rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .footer {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 1.5rem;
+                border-radius: 1.2rem;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            #result {
+                width: calc(100% - 2rem);
+                bottom: 1rem;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-box">
+            <h1>DeepFake Audio Detector</h1>
+            <p class="subtitle">Upload audio or record directly. Advanced AI analysis detects synthetic voice patterns.</p>
+        </div>
+
+        <div class="upload-section" id="dropZone">
+            <div id="filePreview">
+                <p>📁 Selected Audio</p>
+                <p>Drag & Drop Files</p>
+                <p>─ or ─</p>
+                <button class="primary-btn" onclick="document.getElementById('fileInput').click()">
+                    📤 Upload File
+                </button>
+            </div>
+            <input type="file" id="fileInput" hidden accept="audio/*" />
+        </div>
+
+        <div class="action-buttons">
+            <button class="primary-btn" onclick="predict()">
+                🧠 Analyze Audio
+            </button>
+            <button class="secondary-btn" onclick="clearAll()">🧼 Clear</button>
+        </div>
+
+        <div id="result" class="hidden"></div>
+
+        <div class="recorder-section">
+            <button id="recordButton">🎤</button>
+            <div class="record-indicator">
+                <div class="record-dot"></div>
+                <span>Recording...</span>
+            </div>
+            <audio id="recordedAudio" class="hidden" controls></audio>
+        </div>
+
+        <div id="loading" class="hidden">
+            <div class="spinner"></div>
+            Analyzing audio patterns...
+        </div>
+
+        <div class="footer">
+            <div class="footer-left">
+                <p>Supports: WAV, MP3, FLAC</p>
+                <p>v2.1.0 | Secure Analysis</p>
+            </div>
+            <div class="footer-right">
+                <span>⚙️ Settings</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+      import { Client } from "https://unpkg.com/@gradio/client?module";
+
+      let gradioClient = null;
+      let currentAudio = null;
+      let mediaRecorder = null;
+      let audioChunks = [];
+
+      // DOM Elements
+      const filePreview = document.getElementById("filePreview");
+      const resultDiv = document.getElementById("result");
+      const loading = document.getElementById("loading");
+      let fileInput = document.getElementById("fileInput");
+      const dropZone = document.getElementById("dropZone");
+      const recordButton = document.getElementById("recordButton");
+      const recordedAudio = document.getElementById("recordedAudio");
+      const recordIndicator = document.querySelector(".record-indicator");
+
+      // Initialize Gradio Client
+      async function initializeClient() {
+        try {
+          gradioClient = await Client.connect("refikbklm/fake-audio-detector");
+          console.log("Connected to Gradio API");
+        } catch (error) {
+          console.error("Connection error:", error);
+          showError("Failed to connect to detection service");
+        }
+      }
+
+      // Voice Recorder Functionality
+      async function startRecording() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+          mediaRecorder = new MediaRecorder(stream);
+
+          mediaRecorder.ondataavailable = (e) => {
+            audioChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+            currentAudio = new File([audioBlob], "recording.wav", {
+              type: "audio/wav",
+            });
+
+            recordedAudio.src = URL.createObjectURL(audioBlob);
+            recordedAudio.classList.remove("hidden");
+
+            filePreview.innerHTML = `
+                        <audio controls class="preview-audio">
+                            <source src="${recordedAudio.src}" type="audio/wav">
+                        </audio>
+                        <p style="text-align: center">Recorded Audio</p>
+                    `;
+          };
+
+          mediaRecorder.start();
+          recordButton.classList.add("recording");
+          recordIndicator.classList.add("active");
+          recordButton.textContent = "⏹️";
+        } catch (err) {
+          showError("Microphone access required for recording");
+        }
+      }
+
+      function stopRecording() {
+        if(mediaRecorder) mediaRecorder.stop();
+        recordButton.classList.remove("recording");
+        recordIndicator.classList.remove("active");
+        recordButton.textContent = "🎤";
+        audioChunks = [];
+      }
+
+      // File Handling
+      function handleFile(file) {
+        if (!file.type.startsWith("audio/")) {
+          showError("Please upload an audio file");
+          return;
+        }
+
+        currentAudio = file;
+        filePreview.innerHTML = `
+                <audio controls class="preview-audio">
+                    <source src="${URL.createObjectURL(file)}" type="${file.type}">
+                </audio>
+                <p style="text-align: center">Selected: ${file.name}</p>
+            `;
+        
+        // Reset file input properly
+        const newInput = fileInput.cloneNode();
+        fileInput.parentNode.replaceChild(newInput, fileInput);
+        fileInput = newInput;
+        fileInput.addEventListener('change', handleFileSelect);
+      }
+
+      // Prediction Function
+      async function predict() {
+        if (!currentAudio) {
+          showError("Please select or record an audio first");
+          return;
+        }
+
+        loading.classList.remove("hidden");
+        resultDiv.classList.add("hidden");
+
+        try {
+          const audioBlob = new Blob([currentAudio], {
+            type: currentAudio.type,
+          });
+          const result = await gradioClient.predict("/predict", {
+            audio_path: audioBlob,
+          });
+
+          resultDiv.innerHTML = `
+                    <h3 style="color: #f8fafc;">Analysis Result:</h3>
+                    <p style="font-size: 1.2rem; color: ${
+                      result.data.includes("FAKE") ? "#ef4444" : "#22c55e"
+                    };">${result.data}</p>
+                `;
+          resultDiv.classList.remove("hidden");
+        } catch (error) {
+          console.error("Prediction error:", error);
+          showError(`Analysis failed: ${error.message}`);
+        } finally {
+          loading.classList.add("hidden");
+        }
+      }
+
+      // Clear Function
+      async function clearAll() {
+          try {
+              filePreview.innerHTML = `
+                  <p>📁 Selected Audio</p>
+                  <p>Drag & Drop Here</p>
+                  <p>─ or ─</p>
+                  <button class="primary-btn" onclick="document.getElementById('fileInput').click()">📤 Click to Upload</button>
+              `;
+              
+              // Proper input reset
+              const newInput = fileInput.cloneNode();
+              fileInput.parentNode.replaceChild(newInput, fileInput);
+              fileInput = newInput;
+              fileInput.addEventListener('change', handleFileSelect);
+              
+              if (mediaRecorder && mediaRecorder.state === 'recording') {
+                  mediaRecorder.stop();
+              }
+              
+              recordedAudio.src = '';
+              recordedAudio.classList.add('hidden');
+              audioChunks = [];
+              currentAudio = null;
+              resultDiv.classList.add('hidden');
+              loading.classList.add('hidden');
+              recordButton.classList.remove('recording');
+              recordIndicator.classList.remove('active');
+              recordButton.textContent = '🎤';
+              
+          } catch (error) {
+              console.error("Clear error:", error);
+          }
+      }
+
+      // Event Listeners
+      function handleFileSelect(e) {
+          handleFile(e.target.files[0]);
+      }
+
+      // Drag and Drop Handling
+      dropZone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          dropZone.classList.add('dragover');
+      });
+
+      dropZone.addEventListener('dragleave', () => {
+          dropZone.classList.remove('dragover');
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dropZone.classList.remove('dragover');
+          handleFile(e.dataTransfer.files[0]);
+      });
+
+      recordButton.addEventListener("click", () => {
+          if (mediaRecorder && mediaRecorder.state === "recording") {
+              stopRecording();
+          } else {
+              startRecording();
+          }
+      });
+
+      // Initialize
+      function initialize() {
+          fileInput.addEventListener('change', handleFileSelect);
+          window.addEventListener("load", initializeClient);
+      }
+
+      initialize();
+      window.predict = predict;
+      window.clearAll = clearAll;
+    </script>
+</body>
+</html>

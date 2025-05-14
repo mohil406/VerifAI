@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Scope Diagram</title>
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(45deg, #0a192f, #172a45);
+            font-family: 'Segoe UI', sans-serif;
+            display: grid;
+            place-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 50% 50%, 
+                    rgba(74, 144, 226,0.1) 0%, 
+                    rgba(255,255,255,0) 70%),
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(255,255,255,0.03) 0px,
+                    rgba(255,255,255,0.03) 2px,
+                    transparent 2px,
+                    transparent 4px
+                );
+            animation: move 60s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes move {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        :root {
+            --main-blue: #4A90E2;
+            --accent-orange: #FF6B6B;
+            --dark-bg: rgba(30, 30, 45, 0.95);
+            --shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .diagram-container {
+            position: relative;
+            width: 1000px;
+            height: 800px;
+            z-index: 2;
+        }
+
+        .center-node {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: var(--dark-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.5em;
+            font-weight: 700;
+            text-align: center;
+            padding: 1rem;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(5px);
+            transition: transform 0.3s ease;
+        }
+
+        .center-node:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        .connector {
+            stroke: rgba(255,255,255,0.5);
+            stroke-width: 2;
+            filter: drop-shadow(0 2px 4px rgba(46, 118, 182, 0.3));
+        }
+
+        .scope-card {
+            position: absolute;
+            width: 250px;
+            background: var(--dark-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #ddd;
+        }
+
+        .scope-card h3 {
+            color: var(--main-blue);
+            font-size: 16px;
+            margin: 0 0 8px 0;
+            position: relative;
+            padding-bottom: 8px;
+        }
+
+        .scope-card h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 2px;
+            background: var(--accent-orange);
+        }
+
+        .scope-card p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            line-height: 1.4;
+            margin: 12px 0 0 0;
+        }
+
+        .scope-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+            background: rgba(30, 30, 45, 1);
+        }
+
+        #card3:hover, 
+        #card6:hover {
+            transform: translateY(calc(-50% - 8px));
+        }
+
+        #card3:not(:hover), 
+        #card6:not(:hover) {
+            transform: translateY(-50%);
+        }
+
+        #card1 { top: 15%; left: 15%; }
+        #card2 { top: 15%; right: 15%; }
+        #card3 { top: 50%; right: 5%; transform: translateY(-50%); }
+        #card4 { bottom: 15%; right: 15%; }
+        #card5 { bottom: 15%; left: 15%; }
+        #card6 { top: 50%; left: 5%; transform: translateY(-50%); }
+    </style>
+</head>
+<body>
+    <div class="diagram-container">
+        <div class="center-node">PROJECT<br>SCOPE</div>
+        <svg class="connectors" width="100%" height="100%">
+            <line class="connector" x1="50%" y1="50%" x2="30%" y2="20%"/>
+            <line class="connector" x1="50%" y1="50%" x2="70%" y2="20%"/>
+            <line class="connector" x1="50%" y1="50%" x2="85%" y2="50%"/>
+            <line class="connector" x1="50%" y1="50%" x2="70%" y2="80%"/>
+            <line class="connector" x1="50%" y1="50%" x2="30%" y2="80%"/>
+            <line class="connector" x1="50%" y1="50%" x2="15%" y2="50%"/>
+        </svg>
+
+        <div class="scope-card" id="card1">
+            <h3>Metaverse Voice Passports</h3>
+            <p>Cross-platform synthetic voice identification in VR/AR</p>
+        </div>
+        <div class="scope-card" id="card2">
+            <h3>Election Deepfake Radar</h3>
+            <p>Real-time political speech authenticity monitoring</p>
+        </div>
+        <div class="scope-card" id="card3">
+            <h3>UN Compliance Frameworks</h3>
+            <p>Global standards for ethical voice AI development</p>
+        </div>
+        <div class="scope-card" id="card4">
+            <h3>Neurological Voice Mapping</h3>
+            <p>Detecting synthetic speech through brainwave pattern mismatches</p>
+        </div>
+        <div class="scope-card" id="card5">
+            <h3>Blockchain Voice Ledgers</h3>
+            <p>Immutable timestamped records of authentic voice data</p>
+        </div>
+        <div class="scope-card" id="card6">
+            <h3>Entertainment Copyright Shield</h3>
+            <p>Protecting celebrity voice IP in media/content creation</p>
+        </div>
+    </div>
+</body>
+</html>
+
+
